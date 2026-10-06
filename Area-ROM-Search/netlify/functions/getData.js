@@ -1,30 +1,58 @@
-const https = require("https");
-
-const GOOGLE_API =
-  "https://script.google.com/macros/s/AKfycbwcIXuDV3l0b-cHt968m3wVVnYXu6Q2BJgCKA9wHi6EXoj4WRiJRalV6kdn2o45Gy8/exec?action=getData";
+const CSV_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vTqZ-wlrqIB2aB4GoLiiUNk946EGiHCo0JZxPnDw08KMofmBs9g8z1L6JD2OYTEFaipCKR_AngY6Qv_/pub?output=csv";
 
 
 exports.handler = async function () {
 
   try {
 
-    const result = await requestGoogle(GOOGLE_API);
+    // ดึงข้อมูลจาก Google Sheets CSV
+    const response = await fetch(CSV_URL);
+
+    if (!response.ok) {
+
+      throw new Error(
+        "Google Sheets HTTP " +
+        response.status
+      );
+
+    }
+
+    const csvText = await response.text();
+
+    if (!csvText.trim()) {
+
+      throw new Error(
+        "Google Sheets ไม่มีข้อมูล"
+      );
+
+    }
+
+    // แปลง CSV เป็น Array
+    const data = parseCSV(csvText);
 
     return {
+
       statusCode: 200,
 
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "no-cache"
       },
 
-      body: JSON.stringify(result)
+      body: JSON.stringify(data)
 
     };
 
-  } catch (error) {
+  }
+
+  catch (error) {
+
+    console.error(error);
 
     return {
+
       statusCode: 500,
 
       headers: {
@@ -33,9 +61,11 @@ exports.handler = async function () {
       },
 
       body: JSON.stringify({
+
         success: false,
-        error: error.message,
-        detail: error.detail || null
+
+        error: error.message
+
       })
 
     };
@@ -46,173 +76,152 @@ exports.handler = async function () {
 
 
 /* =====================================================
-   Google Request
+   CSV Parser
 ===================================================== */
 
-function requestGoogle(url, count = 0) {
+function parseCSV(text) {
 
-  return new Promise((resolve, reject) => {
+  const rows = [];
 
-    if (count > 10) {
+  let row = [];
 
-      reject(
-        new Error("Redirect มากเกินไป")
-      );
+  let cell = "";
 
-      return;
+  let insideQuotes = false;
+
+
+  for (let i = 0; i < text.length; i++) {
+
+    const char = text[i];
+
+    const next = text[i + 1];
+
+
+    // เครื่องหมาย "
+    if (char === '"') {
+
+      // ถ้าเป็น "" ภายในข้อความ = "
+      if (
+        insideQuotes &&
+        next === '"'
+      ) {
+
+        cell += '"';
+
+        i++;
+
+      } else {
+
+        insideQuotes =
+          !insideQuotes;
+
+      }
+
+      continue;
+
     }
 
 
-    https.get(
-      url,
-      {
-        headers: {
+    // จุลภาค
+    if (
+      char === "," &&
+      !insideQuotes
+    ) {
 
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/145.0.0.0 Safari/537.36",
+      row.push(cell);
 
-          "Accept":
-            "application/json,text/plain,*/*",
+      cell = "";
 
-          "Accept-Language":
-            "th-TH,th;q=0.9,en;q=0.8"
+      continue;
+
+    }
+
+
+    // ขึ้นบรรทัดใหม่
+    if (
+      (char === "\n" || char === "\r") &&
+      !insideQuotes
+    ) {
+
+      // รองรับ \r\n
+      if (
+        char === "\r" &&
+        next === "\n"
+      ) {
+        i++;
+      }
+
+      row.push(cell);
+
+      rows.push(row);
+
+      row = [];
+
+      cell = "";
+
+      continue;
+
+    }
+
+
+    cell += char;
+
+  }
+
+
+  // ข้อมูลตัวสุดท้าย
+  if (
+    cell !== "" ||
+    row.length > 0
+  ) {
+
+    row.push(cell);
+
+    rows.push(row);
+
+  }
+
+
+  if (rows.length === 0) {
+    return [];
+  }
+
+
+  // แถวแรก = Header
+  const headers = rows[0].map(
+    header =>
+      header
+        .replace(/^\uFEFF/, "")
+        .trim()
+  );
+
+
+  // แปลงเป็น Object
+  return rows
+    .slice(1)
+    .filter(row =>
+      row.some(
+        value =>
+          value.trim() !== ""
+      )
+    )
+    .map(row => {
+
+      const obj = {};
+
+      headers.forEach(
+        (header, index) => {
+
+          obj[header] =
+            row[index] !== undefined
+              ? row[index].trim()
+              : "";
 
         }
-      },
+      );
 
-      response => {
+      return obj;
 
-        let body = "";
-
-        response.on(
-          "data",
-          chunk => {
-            body += chunk;
-          }
-        );
-
-
-        response.on(
-          "end",
-          () => {
-
-            const status =
-              response.statusCode || 0;
-
-            const location =
-              response.headers.location || null;
-
-            const contentType =
-              response.headers["content-type"] || null;
-
-
-            /* ==========================
-               Redirect
-            ========================== */
-
-            if (
-              status >= 300 &&
-              status < 400 &&
-              location
-            ) {
-
-              let nextUrl = location;
-
-
-              if (
-                nextUrl.startsWith("/")
-              ) {
-
-                const base =
-                  new URL(url);
-
-                nextUrl =
-                  base.origin +
-                  nextUrl;
-
-              }
-
-
-              requestGoogle(
-                nextUrl,
-                count + 1
-              )
-                .then(resolve)
-                .catch(reject);
-
-              return;
-
-            }
-
-
-            /* ==========================
-               ตรวจ JSON
-            ========================== */
-
-            try {
-
-              const json =
-                JSON.parse(body);
-
-              resolve({
-
-                success: true,
-
-                httpStatus: status,
-
-                contentType: contentType,
-
-                data: json
-
-              });
-
-            }
-
-            catch (e) {
-
-              reject({
-
-                message:
-                  "Google Apps Script ส่งข้อมูลไม่ใช่ JSON",
-
-                detail: {
-
-                  httpStatus: status,
-
-                  contentType: contentType,
-
-                  location: location,
-
-                  responsePreview:
-                    body.substring(0, 1000)
-
-                }
-
-              });
-
-            }
-
-          }
-        );
-
-      }
-
-    ).on(
-      "error",
-      error => {
-
-        reject({
-
-          message:
-            "เชื่อมต่อ Google Apps Script ไม่สำเร็จ",
-
-          detail: error.message
-
-        });
-
-      }
-    );
-
-  });
+    });
 
 }
