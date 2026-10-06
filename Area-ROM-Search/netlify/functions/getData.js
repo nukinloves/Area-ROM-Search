@@ -8,47 +8,23 @@ exports.handler = async function () {
 
   try {
 
-    const result = await fetchGoogleAPI(GOOGLE_API);
-
-    if (!result) {
-      throw new Error("ไม่ได้รับข้อมูลจาก Google Apps Script");
-    }
-
-    // Google Apps Script ส่งกลับมาเป็น
-    // { success: true, data: [...] }
-
-    if (result.success !== true) {
-
-      throw new Error(
-        result.error || "Google Apps Script แจ้งข้อผิดพลาด"
-      );
-
-    }
+    const result = await requestGoogle(GOOGLE_API);
 
     return {
-
       statusCode: 200,
 
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Cache-Control": "no-cache"
+        "Access-Control-Allow-Origin": "*"
       },
 
-      body: JSON.stringify(
-        result.data || []
-      )
+      body: JSON.stringify(result)
 
     };
 
-  }
-
-  catch (error) {
-
-    console.error(error);
+  } catch (error) {
 
     return {
-
       statusCode: 500,
 
       headers: {
@@ -57,11 +33,9 @@ exports.handler = async function () {
       },
 
       body: JSON.stringify({
-
         success: false,
-
-        error: error.message
-
+        error: error.message,
+        detail: error.detail || null
       })
 
     };
@@ -72,30 +46,41 @@ exports.handler = async function () {
 
 
 /* =====================================================
-   เรียก Google Apps Script
-   รองรับ Redirect ของ Google
+   Google Request
 ===================================================== */
 
-function fetchGoogleAPI(url, redirectCount = 0) {
+function requestGoogle(url, count = 0) {
 
   return new Promise((resolve, reject) => {
 
-    if (redirectCount > 5) {
+    if (count > 10) {
+
       reject(
-        new Error("Google API Redirect มากเกินไป")
+        new Error("Redirect มากเกินไป")
       );
+
       return;
     }
+
 
     https.get(
       url,
       {
         headers: {
-          "User-Agent": "Mozilla/5.0",
-          "Accept": "application/json"
+
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/145.0.0.0 Safari/537.36",
+
+          "Accept":
+            "application/json,text/plain,*/*",
+
+          "Accept-Language":
+            "th-TH,th;q=0.9,en;q=0.8"
+
         }
       },
-      (response) => {
+
+      response => {
 
         let body = "";
 
@@ -106,6 +91,7 @@ function fetchGoogleAPI(url, redirectCount = 0) {
           }
         );
 
+
         response.on(
           "end",
           () => {
@@ -113,39 +99,43 @@ function fetchGoogleAPI(url, redirectCount = 0) {
             const status =
               response.statusCode || 0;
 
+            const location =
+              response.headers.location || null;
 
-            /* =========================
-               ถ้า Google Redirect
-            ========================= */
+            const contentType =
+              response.headers["content-type"] || null;
+
+
+            /* ==========================
+               Redirect
+            ========================== */
 
             if (
               status >= 300 &&
               status < 400 &&
-              response.headers.location
+              location
             ) {
 
-              let redirectUrl =
-                response.headers.location;
+              let nextUrl = location;
 
 
-              // รองรับ relative URL
               if (
-                redirectUrl.startsWith("/")
+                nextUrl.startsWith("/")
               ) {
 
                 const base =
                   new URL(url);
 
-                redirectUrl =
+                nextUrl =
                   base.origin +
-                  redirectUrl;
+                  nextUrl;
 
               }
 
 
-              fetchGoogleAPI(
-                redirectUrl,
-                redirectCount + 1
+              requestGoogle(
+                nextUrl,
+                count + 1
               )
                 .then(resolve)
                 .catch(reject);
@@ -155,49 +145,50 @@ function fetchGoogleAPI(url, redirectCount = 0) {
             }
 
 
-            /* =========================
-               HTTP Error
-            ========================= */
-
-            if (
-              status < 200 ||
-              status >= 300
-            ) {
-
-              reject(
-                new Error(
-                  "Google API HTTP " +
-                  status
-                )
-              );
-
-              return;
-
-            }
-
-
-            /* =========================
-               แปลง JSON
-            ========================= */
+            /* ==========================
+               ตรวจ JSON
+            ========================== */
 
             try {
 
               const json =
                 JSON.parse(body);
 
-              resolve(json);
+              resolve({
+
+                success: true,
+
+                httpStatus: status,
+
+                contentType: contentType,
+
+                data: json
+
+              });
 
             }
 
-            catch (error) {
+            catch (e) {
 
-              reject(
+              reject({
 
-                new Error(
-                  "Google Apps Script ส่งข้อมูลไม่ใช่ JSON"
-                )
+                message:
+                  "Google Apps Script ส่งข้อมูลไม่ใช่ JSON",
 
-              );
+                detail: {
+
+                  httpStatus: status,
+
+                  contentType: contentType,
+
+                  location: location,
+
+                  responsePreview:
+                    body.substring(0, 1000)
+
+                }
+
+              });
 
             }
 
@@ -205,12 +196,20 @@ function fetchGoogleAPI(url, redirectCount = 0) {
         );
 
       }
-    )
 
-    .on(
+    ).on(
       "error",
       error => {
-        reject(error);
+
+        reject({
+
+          message:
+            "เชื่อมต่อ Google Apps Script ไม่สำเร็จ",
+
+          detail: error.message
+
+        });
+
       }
     );
 
