@@ -94,6 +94,15 @@ h1 {
 }
 
 
+/* =====================================================
+   FIELD
+===================================================== */
+
+.field {
+  position: relative;
+}
+
+
 .field label {
 
   display: block;
@@ -106,7 +115,7 @@ h1 {
 }
 
 
-select {
+.field input {
 
   width: 100%;
 
@@ -118,17 +127,15 @@ select {
 
   border-radius: 9px;
 
-  background: #fff;
-
   font-size: 15px;
 
   outline: none;
 
-  cursor: pointer;
+  background: #fff;
 }
 
 
-select:focus {
+.field input:focus {
 
   border-color:
     #4285f4;
@@ -139,18 +146,83 @@ select:focus {
 }
 
 
-select:disabled {
+/* =====================================================
+   AUTOCOMPLETE
+===================================================== */
 
-  background: #f1f3f5;
+.suggestions {
 
-  color: #999;
+  position: absolute;
 
-  cursor: not-allowed;
+  left: 0;
+
+  right: 0;
+
+  top: 76px;
+
+  background: #fff;
+
+  border:
+    1px solid #ddd;
+
+  border-radius: 9px;
+
+  max-height: 240px;
+
+  overflow-y: auto;
+
+  z-index: 1000;
+
+  display: none;
+
+  box-shadow:
+    0 5px 15px
+    rgba(0,0,0,0.12);
+}
+
+
+.suggestion {
+
+  padding:
+    10px 13px;
+
+  cursor: pointer;
+
+  border-bottom:
+    1px solid #eee;
+
+  font-size: 14px;
+}
+
+
+.suggestion:last-child {
+  border-bottom: none;
+}
+
+
+.suggestion:hover {
+
+  background:
+    #f2f5f9;
+}
+
+
+.suggestion strong {
+
+  display: block;
+
+  margin-bottom: 2px;
+}
+
+
+.suggestion small {
+
+  color: #777;
 }
 
 
 /* =====================================================
-   BUTTONS
+   BUTTON
 ===================================================== */
 
 .buttons {
@@ -180,7 +252,8 @@ button {
 
 #searchButton {
 
-  background: #1a73e8;
+  background:
+    #1a73e8;
 
   color: white;
 }
@@ -188,13 +261,15 @@ button {
 
 #searchButton:hover {
 
-  background: #155fc0;
+  background:
+    #155fc0;
 }
 
 
 #clearButton {
 
-  background: #e9ecef;
+  background:
+    #e9ecef;
 
   color: #333;
 }
@@ -202,7 +277,8 @@ button {
 
 #clearButton:hover {
 
-  background: #dfe3e7;
+  background:
+    #dfe3e7;
 }
 
 
@@ -226,19 +302,16 @@ button {
 
 
 .loading {
-
   color: #555;
 }
 
 
 .success {
-
   color: #16803c;
 }
 
 
 .error {
-
   color: #d93025;
 }
 
@@ -355,7 +428,8 @@ button {
 
   border-radius: 12px;
 
-  padding: 35px 20px;
+  padding:
+    35px 20px;
 
   text-align: center;
 
@@ -466,15 +540,17 @@ button {
         Region
       </label>
 
-      <select
-        id="regionSelect"
+      <input
+        type="text"
+        id="regionInput"
+        placeholder="พิมพ์ Region..."
+        autocomplete="off"
       >
 
-        <option value="">
-          -- ทุก Region --
-        </option>
-
-      </select>
+      <div
+        id="regionSuggestions"
+        class="suggestions"
+      ></div>
 
     </div>
 
@@ -487,16 +563,17 @@ button {
         District
       </label>
 
-      <select
-        id="districtSelect"
-        disabled
+      <input
+        type="text"
+        id="districtInput"
+        placeholder="พิมพ์ District..."
+        autocomplete="off"
       >
 
-        <option value="">
-          -- ทุก District --
-        </option>
-
-      </select>
+      <div
+        id="districtSuggestions"
+        class="suggestions"
+      ></div>
 
     </div>
 
@@ -509,16 +586,17 @@ button {
         Subdistrict
       </label>
 
-      <select
-        id="subdistrictSelect"
-        disabled
+      <input
+        type="text"
+        id="subdistrictInput"
+        placeholder="พิมพ์ Subdistrict..."
+        autocomplete="off"
       >
 
-        <option value="">
-          -- ทุก Subdistrict --
-        </option>
-
-      </select>
+      <div
+        id="subdistrictSuggestions"
+        class="suggestions"
+      ></div>
 
     </div>
 
@@ -562,7 +640,7 @@ button {
 
 
 <!-- =====================================================
-     RESULT HEADER
+     RESULT
 ===================================================== -->
 
 <div class="result-header">
@@ -577,10 +655,6 @@ button {
 
 </div>
 
-
-<!-- =====================================================
-     RESULTS
-===================================================== -->
 
 <div
   id="results"
@@ -619,21 +693,39 @@ let allData = [];
    ELEMENTS
 ===================================================== */
 
-const regionSelect =
+const regionInput =
   document.getElementById(
-    "regionSelect"
+    "regionInput"
   );
 
 
-const districtSelect =
+const districtInput =
   document.getElementById(
-    "districtSelect"
+    "districtInput"
   );
 
 
-const subdistrictSelect =
+const subdistrictInput =
   document.getElementById(
-    "subdistrictSelect"
+    "subdistrictInput"
+  );
+
+
+const regionSuggestions =
+  document.getElementById(
+    "regionSuggestions"
+  );
+
+
+const districtSuggestions =
+  document.getElementById(
+    "districtSuggestions"
+  );
+
+
+const subdistrictSuggestions =
+  document.getElementById(
+    "subdistrictSuggestions"
   );
 
 
@@ -745,9 +837,6 @@ async function loadData() {
       "ข้อมูลทั้งหมด " +
       allData.length.toLocaleString() +
       " รายการ";
-
-
-    createRegionList();
 
 
   }
@@ -937,25 +1026,31 @@ function parseCSV(text) {
 
 
 /* =====================================================
-   UNIQUE SORT
+   UNIQUE
 ===================================================== */
 
 function uniqueSorted(values) {
 
   return [
     ...new Set(
-      values.filter(
-        value =>
-          value !== null &&
-          value !== undefined &&
-          String(value).trim() !== ""
-      )
-      .map(
-        value =>
-          String(value).trim()
-      )
+
+      values
+
+        .filter(
+          value =>
+            value !== null &&
+            value !== undefined &&
+            String(value).trim() !== ""
+        )
+
+        .map(
+          value =>
+            String(value).trim()
+        )
+
     )
   ]
+
   .sort(
     (a, b) =>
       a.localeCompare(
@@ -968,46 +1063,120 @@ function uniqueSorted(values) {
 
 
 /* =====================================================
-   REGION
+   AUTOCOMPLETE FUNCTION
 ===================================================== */
 
-function createRegionList() {
-
-  const regions =
-    uniqueSorted(
-      allData.map(
-        row => row.region
-      )
-    );
+function setupAutocomplete(
+  input,
+  suggestionBox,
+  fieldName
+) {
 
 
-  regionSelect.innerHTML = `
-    <option value="">
-      -- ทุก Region --
-    </option>
-  `;
+  input.addEventListener(
+    "input",
+    () => {
+
+      const keyword =
+        input.value
+          .trim()
+          .toLowerCase();
 
 
-  regions.forEach(
-    region => {
+      suggestionBox.innerHTML = "";
 
-      const option =
-        document.createElement(
-          "option"
+
+      if (
+        !keyword ||
+        !allData.length
+      ) {
+
+        suggestionBox.style.display =
+          "none";
+
+        return;
+
+      }
+
+
+      const values =
+        uniqueSorted(
+
+          allData.map(
+            row =>
+              row[fieldName]
+          )
+
         );
 
 
-      option.value =
-        region;
+      const matches =
+        values
+
+          .filter(
+            value =>
+              value
+                .toLowerCase()
+                .includes(keyword)
+          )
+
+          .slice(0, 15);
 
 
-      option.textContent =
-        region;
+      if (!matches.length) {
+
+        suggestionBox.style.display =
+          "none";
+
+        return;
+
+      }
 
 
-      regionSelect.appendChild(
-        option
+      matches.forEach(
+        value => {
+
+          const item =
+            document.createElement(
+              "div"
+            );
+
+
+          item.className =
+            "suggestion";
+
+
+          item.innerHTML = `
+            <strong>
+              ${escapeHTML(value)}
+            </strong>
+          `;
+
+
+          item.addEventListener(
+            "click",
+            () => {
+
+              input.value =
+                value;
+
+              suggestionBox.style.display =
+                "none";
+
+            }
+          );
+
+
+          suggestionBox.appendChild(
+            item
+          );
+
+        }
       );
+
+
+      suggestionBox.style.display =
+        "block";
 
     }
   );
@@ -1016,177 +1185,63 @@ function createRegionList() {
 
 
 /* =====================================================
-   REGION CHANGE
+   ESCAPE HTML
 ===================================================== */
 
-regionSelect.addEventListener(
-  "change",
-  () => {
+function escapeHTML(value) {
 
-    const region =
-      regionSelect.value;
+  return String(value)
 
+    .replace(
+      /&/g,
+      "&amp;"
+    )
 
-    districtSelect.innerHTML = `
-      <option value="">
-        -- ทุก District --
-      </option>
-    `;
+    .replace(
+      /</g,
+      "&lt;"
+    )
 
+    .replace(
+      />/g,
+      "&gt;"
+    )
 
-    subdistrictSelect.innerHTML = `
-      <option value="">
-        -- ทุก Subdistrict --
-      </option>
-    `;
+    .replace(
+      /"/g,
+      "&quot;"
+    )
 
-
-    subdistrictSelect.disabled =
-      true;
-
-
-    if (!region) {
-
-      districtSelect.disabled =
-        true;
-
-      return;
-
-    }
-
-
-    const districts =
-      uniqueSorted(
-
-        allData
-
-          .filter(
-            row =>
-              row.region === region
-          )
-
-          .map(
-            row =>
-              row.district_th
-          )
-
-      );
-
-
-    districts.forEach(
-      district => {
-
-        const option =
-          document.createElement(
-            "option"
-          );
-
-
-        option.value =
-          district;
-
-
-        option.textContent =
-          district;
-
-
-        districtSelect.appendChild(
-          option
-        );
-
-      }
+    .replace(
+      /'/g,
+      "&#039;"
     );
 
-
-    districtSelect.disabled =
-      false;
-
-  }
-);
+}
 
 
 /* =====================================================
-   DISTRICT CHANGE
+   SETUP AUTOCOMPLETE
 ===================================================== */
 
-districtSelect.addEventListener(
-  "change",
-  () => {
-
-    const region =
-      regionSelect.value;
-
-
-    const district =
-      districtSelect.value;
+setupAutocomplete(
+  regionInput,
+  regionSuggestions,
+  "region"
+);
 
 
-    subdistrictSelect.innerHTML = `
-      <option value="">
-        -- ทุก Subdistrict --
-      </option>
-    `;
+setupAutocomplete(
+  districtInput,
+  districtSuggestions,
+  "district_th"
+);
 
 
-    if (!district) {
-
-      subdistrictSelect.disabled =
-        true;
-
-      return;
-
-    }
-
-
-    const subdistricts =
-
-      uniqueSorted(
-
-        allData
-
-          .filter(
-            row =>
-              row.region === region &&
-              row.district_th === district
-          )
-
-          .map(
-            row =>
-              row.subdistrict_th
-          )
-
-      );
-
-
-    subdistricts.forEach(
-      subdistrict => {
-
-        const option =
-          document.createElement(
-            "option"
-          );
-
-
-        option.value =
-          subdistrict;
-
-
-        option.textContent =
-          subdistrict;
-
-
-        subdistrictSelect.appendChild(
-          option
-        );
-
-      }
-    );
-
-
-    subdistrictSelect.disabled =
-      false;
-
-  }
+setupAutocomplete(
+  subdistrictInput,
+  subdistrictSuggestions,
+  "subdistrict_th"
 );
 
 
@@ -1203,34 +1258,102 @@ searchButton.addEventListener(
 function searchData() {
 
   const region =
-    regionSelect.value;
+    regionInput.value
+      .trim()
+      .toLowerCase();
 
 
   const district =
-    districtSelect.value;
+    districtInput.value
+      .trim()
+      .toLowerCase();
 
 
   const subdistrict =
-    subdistrictSelect.value;
+    subdistrictInput.value
+      .trim()
+      .toLowerCase();
 
+
+  /*
+    ถ้าไม่กรอกอะไรเลย
+  */
+
+  if (
+    !region &&
+    !district &&
+    !subdistrict
+  ) {
+
+    results.innerHTML = `
+      <div class="empty">
+        กรุณากรอกข้อมูลอย่างน้อย 1 ช่อง
+        เพื่อค้นหา
+      </div>
+    `;
+
+    resultCount.textContent =
+      "0 รายการ";
+
+    return;
+
+  }
+
+
+  /* =====================================================
+     FILTER
+  ===================================================== */
 
   const filtered =
     allData.filter(row => {
 
 
+      const rowRegion =
+        String(
+          row.region || ""
+        )
+        .toLowerCase();
+
+
+      const rowDistrict =
+        String(
+          row.district_th || ""
+        )
+        .toLowerCase();
+
+
+      const rowSubdistrict =
+        String(
+          row.subdistrict_th || ""
+        )
+        .toLowerCase();
+
+
+      /*
+        Region
+      */
+
       if (
         region &&
-        row.region !== region
+        !rowRegion.includes(
+          region
+        )
       ) {
 
         return false;
 
       }
 
+
+      /*
+        District
+      */
 
       if (
         district &&
-        row.district_th !== district
+        !rowDistrict.includes(
+          district
+        )
       ) {
 
         return false;
@@ -1238,9 +1361,15 @@ function searchData() {
       }
 
 
+      /*
+        Subdistrict
+      */
+
       if (
         subdistrict &&
-        row.subdistrict_th !== subdistrict
+        !rowSubdistrict.includes(
+          subdistrict
+        )
       ) {
 
         return false;
@@ -1261,7 +1390,7 @@ function searchData() {
 
 
 /* =====================================================
-   RENDER RESULTS
+   RENDER
 ===================================================== */
 
 function renderResults(data) {
@@ -1287,9 +1416,7 @@ function renderResults(data) {
   }
 
 
-  /*
-    Group ตาม team_name
-  */
+  /* GROUP TEAM */
 
   const groups = {};
 
@@ -1314,12 +1441,7 @@ function renderResults(data) {
 
 
   Object.keys(groups)
-    .sort(
-      (a, b) =>
-        a.localeCompare(
-          b
-        )
-    )
+    .sort()
     .forEach(team => {
 
 
@@ -1426,7 +1548,6 @@ function renderResults(data) {
             location
           );
 
-
         }
       );
 
@@ -1434,7 +1555,6 @@ function renderResults(data) {
       results.appendChild(
         card
       );
-
 
     });
 
@@ -1449,29 +1569,21 @@ clearButton.addEventListener(
   "click",
   () => {
 
-    regionSelect.value = "";
+    regionInput.value = "";
+
+    districtInput.value = "";
+
+    subdistrictInput.value = "";
 
 
-    districtSelect.innerHTML = `
-      <option value="">
-        -- ทุก District --
-      </option>
-    `;
+    regionSuggestions.style.display =
+      "none";
 
+    districtSuggestions.style.display =
+      "none";
 
-    districtSelect.disabled =
-      true;
-
-
-    subdistrictSelect.innerHTML = `
-      <option value="">
-        -- ทุก Subdistrict --
-      </option>
-    `;
-
-
-    subdistrictSelect.disabled =
-      true;
+    subdistrictSuggestions.style.display =
+      "none";
 
 
     results.innerHTML = "";
@@ -1488,15 +1600,55 @@ clearButton.addEventListener(
    ENTER
 ===================================================== */
 
+[
+  regionInput,
+  districtInput,
+  subdistrictInput
+]
+.forEach(input => {
+
+  input.addEventListener(
+    "keydown",
+    event => {
+
+      if (
+        event.key === "Enter"
+      ) {
+
+        event.preventDefault();
+
+        searchData();
+
+      }
+
+    }
+  );
+
+});
+
+
+/* =====================================================
+   CLICK OUTSIDE
+===================================================== */
+
 document.addEventListener(
-  "keydown",
+  "click",
   event => {
 
     if (
-      event.key === "Enter"
+      !event.target.closest(
+        ".field"
+      )
     ) {
 
-      searchData();
+      regionSuggestions.style.display =
+        "none";
+
+      districtSuggestions.style.display =
+        "none";
+
+      subdistrictSuggestions.style.display =
+        "none";
 
     }
 
