@@ -1,102 +1,173 @@
 const https = require("https");
 
-const API_URL =
+const GOOGLE_API =
   "https://script.google.com/macros/s/AKfycbwcIXuDV3l0b-cHt968m3wVVnYXu6Q2BJgCKA9wHi6EXoj4WRiJRalV6kdn2o45Gy8/exec?action=getData";
 
 
-function request(url, redirectCount = 0) {
+exports.handler = async function () {
+
+  try {
+
+    const result = await fetchGoogleAPI(GOOGLE_API);
+
+    if (!result) {
+      throw new Error("ไม่ได้รับข้อมูลจาก Google Apps Script");
+    }
+
+    // Google Apps Script ส่งกลับมาเป็น
+    // { success: true, data: [...] }
+
+    if (result.success !== true) {
+
+      throw new Error(
+        result.error || "Google Apps Script แจ้งข้อผิดพลาด"
+      );
+
+    }
+
+    return {
+
+      statusCode: 200,
+
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "no-cache"
+      },
+
+      body: JSON.stringify(
+        result.data || []
+      )
+
+    };
+
+  }
+
+  catch (error) {
+
+    console.error(error);
+
+    return {
+
+      statusCode: 500,
+
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+      },
+
+      body: JSON.stringify({
+
+        success: false,
+
+        error: error.message
+
+      })
+
+    };
+
+  }
+
+};
+
+
+/* =====================================================
+   เรียก Google Apps Script
+   รองรับ Redirect ของ Google
+===================================================== */
+
+function fetchGoogleAPI(url, redirectCount = 0) {
 
   return new Promise((resolve, reject) => {
 
-    if (redirectCount > 10) {
-
+    if (redirectCount > 5) {
       reject(
-        new Error("Redirect มากเกินไป")
+        new Error("Google API Redirect มากเกินไป")
       );
-
       return;
     }
-
 
     https.get(
       url,
       {
         headers: {
-          "User-Agent":
-            "Mozilla/5.0"
+          "User-Agent": "Mozilla/5.0",
+          "Accept": "application/json"
         }
       },
-      response => {
+      (response) => {
 
         let body = "";
-
 
         response.on(
           "data",
           chunk => {
-
             body += chunk;
-
           }
         );
-
 
         response.on(
           "end",
           () => {
 
-            /*
-             * Google Apps Script มักส่ง
-             * 301 / 302 / 303 / 307 / 308
-             * แล้วค่อยไปยัง URL จริง
-             */
+            const status =
+              response.statusCode || 0;
+
+
+            /* =========================
+               ถ้า Google Redirect
+            ========================= */
 
             if (
-              [301, 302, 303, 307, 308]
-                .includes(response.statusCode)
+              status >= 300 &&
+              status < 400 &&
+              response.headers.location
             ) {
 
-              const location =
+              let redirectUrl =
                 response.headers.location;
 
 
-              if (!location) {
+              // รองรับ relative URL
+              if (
+                redirectUrl.startsWith("/")
+              ) {
 
-                reject(
-                  new Error(
-                    "พบ Redirect แต่ไม่มี Location"
-                  )
-                );
+                const base =
+                  new URL(url);
 
-                return;
+                redirectUrl =
+                  base.origin +
+                  redirectUrl;
 
               }
 
 
-              request(
-                location,
+              fetchGoogleAPI(
+                redirectUrl,
                 redirectCount + 1
               )
-              .then(resolve)
-              .catch(reject);
-
+                .then(resolve)
+                .catch(reject);
 
               return;
 
             }
 
 
+            /* =========================
+               HTTP Error
+            ========================= */
+
             if (
-              response.statusCode < 200 ||
-              response.statusCode >= 300
+              status < 200 ||
+              status >= 300
             ) {
 
               reject(
                 new Error(
-                  "Google Apps Script HTTP " +
-                  response.statusCode +
-                  ": " +
-                  body.substring(0, 500)
+                  "Google API HTTP " +
+                  status
                 )
               );
 
@@ -105,126 +176,44 @@ function request(url, redirectCount = 0) {
             }
 
 
-            resolve(body);
+            /* =========================
+               แปลง JSON
+            ========================= */
+
+            try {
+
+              const json =
+                JSON.parse(body);
+
+              resolve(json);
+
+            }
+
+            catch (error) {
+
+              reject(
+
+                new Error(
+                  "Google Apps Script ส่งข้อมูลไม่ใช่ JSON"
+                )
+
+              );
+
+            }
 
           }
         );
 
-
       }
-    ).on(
+    )
+
+    .on(
       "error",
       error => {
-
         reject(error);
-
       }
     );
 
   });
 
 }
-
-
-exports.handler = async function () {
-
-  try {
-
-    const body =
-      await request(API_URL);
-
-
-    /*
-     * ตรวจสอบว่าเป็น JSON
-     */
-
-    let data;
-
-    try {
-
-      data =
-        JSON.parse(body);
-
-    } catch (error) {
-
-      return {
-
-        statusCode: 500,
-
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
-
-        body:
-          JSON.stringify({
-
-            error:
-              "Google Apps Script ส่งข้อมูลไม่ใช่ JSON",
-
-            response:
-              body.substring(0, 1000)
-
-          })
-
-      };
-
-    }
-
-
-    /*
-     * ส่ง JSON กลับไปให้เว็บไซต์
-     */
-
-    return {
-
-      statusCode: 200,
-
-      headers: {
-
-        "Content-Type":
-          "application/json",
-
-        "Cache-Control":
-          "no-cache, no-store, must-revalidate"
-
-      },
-
-      body:
-        JSON.stringify(data)
-
-    };
-
-
-  } catch (error) {
-
-    console.error(
-      "Google Apps Script Error:",
-      error
-    );
-
-
-    return {
-
-      statusCode: 500,
-
-      headers: {
-
-        "Content-Type":
-          "application/json"
-
-      },
-
-      body:
-        JSON.stringify({
-
-          error:
-            error.message || String(error)
-
-        })
-
-    };
-
-  }
-
-};
