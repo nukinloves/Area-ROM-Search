@@ -1,29 +1,141 @@
-exports.handler = async function () {
+const https = require("https");
 
-  const API_URL =
-    "https://script.google.com/macros/s/AKfycbwcIXuDV3l0b-cHt968m3wVVnYXu6Q2BJgCKA9wHi6EXoj4WRiJRalV6kdn2o45Gy8/exec?action=getData";
+const API_URL =
+  "https://script.google.com/macros/s/AKfycbwcIXuDV3l0b-cHt968m3wVVnYXu6Q2BJgCKA9wHi6EXoj4WRiJRalV6kdn2o45Gy8/exec?action=getData";
+
+
+function request(url, redirectCount = 0) {
+
+  return new Promise((resolve, reject) => {
+
+    if (redirectCount > 10) {
+
+      reject(
+        new Error("Redirect มากเกินไป")
+      );
+
+      return;
+    }
+
+
+    https.get(
+      url,
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0"
+        }
+      },
+      response => {
+
+        let body = "";
+
+
+        response.on(
+          "data",
+          chunk => {
+
+            body += chunk;
+
+          }
+        );
+
+
+        response.on(
+          "end",
+          () => {
+
+            /*
+             * Google Apps Script มักส่ง
+             * 301 / 302 / 303 / 307 / 308
+             * แล้วค่อยไปยัง URL จริง
+             */
+
+            if (
+              [301, 302, 303, 307, 308]
+                .includes(response.statusCode)
+            ) {
+
+              const location =
+                response.headers.location;
+
+
+              if (!location) {
+
+                reject(
+                  new Error(
+                    "พบ Redirect แต่ไม่มี Location"
+                  )
+                );
+
+                return;
+
+              }
+
+
+              request(
+                location,
+                redirectCount + 1
+              )
+              .then(resolve)
+              .catch(reject);
+
+
+              return;
+
+            }
+
+
+            if (
+              response.statusCode < 200 ||
+              response.statusCode >= 300
+            ) {
+
+              reject(
+                new Error(
+                  "Google Apps Script HTTP " +
+                  response.statusCode +
+                  ": " +
+                  body.substring(0, 500)
+                )
+              );
+
+              return;
+
+            }
+
+
+            resolve(body);
+
+          }
+        );
+
+
+      }
+    ).on(
+      "error",
+      error => {
+
+        reject(error);
+
+      }
+    );
+
+  });
+
+}
+
+
+exports.handler = async function () {
 
   try {
 
-    const response =
-      await fetch(API_URL);
-
-    if (!response.ok) {
-
-      throw new Error(
-        "Google Apps Script HTTP " +
-        response.status
-      );
-
-    }
-
-    const text =
-      await response.text();
+    const body =
+      await request(API_URL);
 
 
     /*
-     * ตรวจสอบว่า Google Apps Script
-     * ส่ง JSON กลับมาจริงหรือไม่
+     * ตรวจสอบว่าเป็น JSON
      */
 
     let data;
@@ -31,21 +143,38 @@ exports.handler = async function () {
     try {
 
       data =
-        JSON.parse(text);
+        JSON.parse(body);
 
     } catch (error) {
 
-      console.error(
-        "Google Apps Script response:",
-        text
-      );
+      return {
 
-      throw new Error(
-        "Google Apps Script ไม่ได้ส่ง JSON"
-      );
+        statusCode: 500,
+
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
+
+        body:
+          JSON.stringify({
+
+            error:
+              "Google Apps Script ส่งข้อมูลไม่ใช่ JSON",
+
+            response:
+              body.substring(0, 1000)
+
+          })
+
+      };
 
     }
 
+
+    /*
+     * ส่ง JSON กลับไปให้เว็บไซต์
+     */
 
     return {
 
@@ -57,7 +186,7 @@ exports.handler = async function () {
           "application/json",
 
         "Cache-Control":
-          "no-cache"
+          "no-cache, no-store, must-revalidate"
 
       },
 
@@ -70,7 +199,7 @@ exports.handler = async function () {
   } catch (error) {
 
     console.error(
-      "getData error:",
+      "Google Apps Script Error:",
       error
     );
 
@@ -90,7 +219,7 @@ exports.handler = async function () {
         JSON.stringify({
 
           error:
-            error.message
+            error.message || String(error)
 
         })
 
