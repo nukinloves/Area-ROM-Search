@@ -12,231 +12,527 @@
 
   <title>Area ROM Search</title>
 
+
   <style>
 
     * {
       box-sizing: border-box;
     }
 
+
     body {
       margin: 0;
+
       font-family:
         Arial,
         "Noto Sans Thai",
         sans-serif;
+
       background: #f4f6f8;
+
       color: #222;
     }
 
+
     .container {
       max-width: 1100px;
+
       margin: 0 auto;
+
       padding: 30px 20px 50px;
     }
 
+
+    /* ==========================================
+       HEADER
+    ========================================== */
+
     .header {
       text-align: center;
+
       margin-bottom: 25px;
     }
+
 
     .header h1 {
       margin: 0 0 8px;
+
       font-size: 32px;
     }
 
+
     .header p {
       margin: 0;
+
       color: #666;
+
       font-size: 15px;
     }
 
+
+    /* ==========================================
+       SEARCH BOX
+    ========================================== */
+
     .search-box {
       background: #fff;
+
       border-radius: 14px;
+
       padding: 22px;
-      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+
+      box-shadow:
+        0 3px 12px
+        rgba(0, 0, 0, 0.08);
+
       margin-bottom: 25px;
     }
 
+
     .fields {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+
+      grid-template-columns:
+        repeat(3, 1fr);
+
       gap: 15px;
     }
+
 
     .field {
       position: relative;
     }
 
+
     .field label {
       display: block;
+
       font-weight: bold;
+
       margin-bottom: 7px;
+
       font-size: 14px;
     }
+
 
     .field input {
       width: 100%;
+
       padding: 12px 13px;
+
       border: 1px solid #ccc;
+
       border-radius: 8px;
+
       font-size: 15px;
+
       outline: none;
+
       background: #fff;
     }
+
 
     .field input:focus {
       border-color: #1976d2;
-      box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+
+      box-shadow:
+        0 0 0 2px
+        rgba(25, 118, 210, 0.1);
     }
+
+
+    .field input.has-value {
+      border-color: #1976d2;
+    }
+
+
+    /* ==========================================
+       SUGGESTIONS
+    ========================================== */
 
     .suggestions {
       position: absolute;
+
       top: 100%;
+
       left: 0;
+
       right: 0;
+
       background: #fff;
+
       border: 1px solid #ddd;
+
       border-top: none;
-      border-radius: 0 0 8px 8px;
+
+      border-radius:
+        0 0 8px 8px;
+
       max-height: 260px;
+
       overflow-y: auto;
+
       z-index: 1000;
+
       display: none;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+
+      box-shadow:
+        0 4px 10px
+        rgba(0, 0, 0, 0.08);
     }
+
 
     .suggestion-item {
       padding: 10px 12px;
+
       cursor: pointer;
+
       font-size: 14px;
     }
+
 
     .suggestion-item:hover {
       background: #f1f5f9;
     }
 
+
     .suggestion-empty {
       padding: 10px 12px;
+
       color: #888;
+
       font-size: 13px;
     }
 
+
+    /* ==========================================
+       BUTTONS
+    ========================================== */
+
     .buttons {
       display: flex;
+
       gap: 10px;
+
       margin-top: 18px;
     }
 
+
     button {
       border: none;
+
       border-radius: 8px;
+
       padding: 11px 22px;
+
       font-size: 15px;
+
       cursor: pointer;
     }
 
+
+    button:disabled {
+      opacity: 0.6;
+
+      cursor: not-allowed;
+    }
+
+
     #searchBtn {
       background: #1976d2;
+
       color: #fff;
     }
+
 
     #searchBtn:hover {
       background: #1565c0;
     }
 
+
     #clearBtn {
       background: #e0e0e0;
+
       color: #333;
     }
+
 
     #clearBtn:hover {
       background: #d0d0d0;
     }
 
+
+    /* ==========================================
+       HINT
+    ========================================== */
+
     .hint {
       margin-top: 12px;
+
       color: #777;
+
       font-size: 13px;
     }
+
+
+    /* ==========================================
+       STATUS
+    ========================================== */
 
     .status {
       margin-bottom: 12px;
+
       color: #555;
+
       font-size: 14px;
     }
+
+
+    .status.success {
+      color: #388e3c;
+    }
+
+
+    .status.error {
+      color: #d32f2f;
+    }
+
+
+    /* ==========================================
+       RESULT HEADER
+    ========================================== */
 
     .result-header {
       display: flex;
+
       align-items: center;
+
       justify-content: space-between;
+
       margin-bottom: 12px;
     }
 
+
     .result-header h2 {
       margin: 0;
+
       font-size: 20px;
     }
 
+
     .result-count {
       color: #666;
+
       font-size: 14px;
     }
+
+
+    /* ==========================================
+       RESULTS
+    ========================================== */
 
     .results {
       display: flex;
+
       flex-direction: column;
-      gap: 15px;
+
+      gap: 12px;
     }
+
+
+    /* ==========================================
+       TEAM CARD
+    ========================================== */
 
     .team-card {
       background: #fff;
+
       border-radius: 12px;
-      padding: 18px;
-      box-shadow: 0 2px 9px rgba(0, 0, 0, 0.07);
+
+      padding: 17px 18px;
+
+      box-shadow:
+        0 2px 9px
+        rgba(0, 0, 0, 0.07);
+
+      transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
     }
 
-    .team-title {
-      font-size: 17px;
-      font-weight: bold;
-      margin-bottom: 13px;
-      word-break: break-word;
+
+    .team-card:hover {
+      transform: translateY(-1px);
+
+      box-shadow:
+        0 4px 12px
+        rgba(0, 0, 0, 0.09);
     }
+
+
+    /* ==========================================
+       TEAM NAME
+    ========================================== */
+
+    .team-title {
+      font-size: 16px;
+
+      font-weight: bold;
+
+      line-height: 1.5;
+
+      margin-bottom: 10px;
+
+      word-break: break-word;
+
+      color: #222;
+    }
+
+
+    /* ==========================================
+       AREA LIST
+    ========================================== */
 
     .area-list {
       display: flex;
+
       flex-direction: column;
-      gap: 8px;
+
+      gap: 5px;
     }
+
 
     .area-item {
-      padding: 10px 12px;
-      background: #f7f9fb;
-      border-radius: 8px;
-      border-left: 4px solid #1976d2;
+      padding: 7px 4px;
+
+      border-top: 1px solid #f0f0f0;
+
+      color: #555;
+
+      font-size: 14px;
+
+      line-height: 1.6;
+
+      word-break: break-word;
     }
+
+
+    .area-item:first-child {
+      border-top: none;
+    }
+
 
     .area-main {
-      font-weight: bold;
       font-size: 14px;
-      word-break: break-word;
+
+      color: #444;
     }
 
-    .area-sub {
-      margin-top: 4px;
-      color: #666;
-      font-size: 13px;
-      word-break: break-word;
+
+    .area-main .emoji {
+      margin-right: 2px;
     }
+
+
+    .area-main .region {
+      font-weight: bold;
+
+      color: #333;
+    }
+
+
+    .area-main .district,
+    .area-main .subdistrict {
+      color: #333;
+    }
+
+
+    .area-main .province {
+      color: #555;
+    }
+
+
+    /* ==========================================
+       TEAM AREA COUNT
+    ========================================== */
+
+    .team-area-count {
+      display: inline-block;
+
+      margin-left: 8px;
+
+      padding: 2px 7px;
+
+      border-radius: 20px;
+
+      background: #eef5fc;
+
+      color: #1976d2;
+
+      font-size: 11px;
+
+      font-weight: normal;
+
+      vertical-align: middle;
+    }
+
+
+    /* ==========================================
+       EMPTY
+    ========================================== */
 
     .empty {
       background: #fff;
+
       padding: 30px;
+
       text-align: center;
+
       color: #777;
+
       border-radius: 12px;
-      box-shadow: 0 2px 9px rgba(0, 0, 0, 0.05);
+
+      box-shadow:
+        0 2px 9px
+        rgba(0, 0, 0, 0.05);
     }
+
+
+    /* ==========================================
+       LOADING
+    ========================================== */
+
+    .loading {
+      background: #fff;
+
+      padding: 30px;
+
+      text-align: center;
+
+      color: #666;
+
+      border-radius: 12px;
+    }
+
+
+    /* ==========================================
+       SUMMARY
+    ========================================== */
+
+    .summary {
+      margin-top: 5px;
+
+      color: #777;
+
+      font-size: 13px;
+
+      text-align: right;
+    }
+
+
+    /* ==========================================
+       MOBILE
+    ========================================== */
 
     @media (max-width: 800px) {
 
@@ -244,20 +540,44 @@
         grid-template-columns: 1fr;
       }
 
+
       .container {
-        padding: 20px 12px 40px;
+        padding:
+          20px 12px 40px;
       }
+
 
       .header h1 {
         font-size: 26px;
       }
 
+
       .buttons {
         flex-direction: column;
       }
 
+
       button {
         width: 100%;
+      }
+
+
+      .result-header {
+        align-items: flex-start;
+
+        gap: 8px;
+
+        flex-direction: column;
+      }
+
+
+      .team-title {
+        font-size: 15px;
+      }
+
+
+      .area-main {
+        font-size: 13px;
       }
 
     }
@@ -269,11 +589,19 @@
 
 <body>
 
+
   <div class="container">
+
+
+    <!-- ==========================================
+         HEADER
+    ========================================== -->
 
     <div class="header">
 
-      <h1>Area ROM Search</h1>
+      <h1>
+        Area ROM Search
+      </h1>
 
       <p>
         ค้นหาข้อมูลพื้นที่และทีม ROM จาก Google Sheets
@@ -282,11 +610,18 @@
     </div>
 
 
+    <!-- ==========================================
+         SEARCH
+    ========================================== -->
+
     <div class="search-box">
+
 
       <div class="fields">
 
-        <!-- Region -->
+
+        <!-- REGION -->
+
         <div class="field">
 
           <label for="regionInput">
@@ -308,7 +643,8 @@
         </div>
 
 
-        <!-- District -->
+        <!-- DISTRICT -->
+
         <div class="field">
 
           <label for="districtInput">
@@ -330,7 +666,8 @@
         </div>
 
 
-        <!-- Subdistrict -->
+        <!-- SUBDISTRICT -->
+
         <div class="field">
 
           <label for="subdistrictInput">
@@ -351,16 +688,26 @@
 
         </div>
 
+
       </div>
 
 
+      <!-- BUTTONS -->
+
       <div class="buttons">
 
-        <button id="searchBtn">
+        <button
+          id="searchBtn"
+          type="button"
+        >
           🔍 ค้นหา
         </button>
 
-        <button id="clearBtn">
+
+        <button
+          id="clearBtn"
+          type="button"
+        >
           ✕ ล้างข้อมูล
         </button>
 
@@ -368,21 +715,36 @@
 
 
       <div class="hint">
+
         💡 กรอกช่องใดช่องหนึ่งก็ได้
         หรือกรอกหลายช่องเพื่อค้นหาแบบ AND
+
       </div>
+
 
     </div>
 
 
-    <div id="status" class="status"></div>
+    <!-- ==========================================
+         STATUS
+    ========================================== -->
 
+    <div
+      id="status"
+      class="status"
+    ></div>
+
+
+    <!-- ==========================================
+         RESULT HEADER
+    ========================================== -->
 
     <div class="result-header">
 
       <h2>
         ผลการค้นหา
       </h2>
+
 
       <div
         id="resultCount"
@@ -393,6 +755,10 @@
 
     </div>
 
+
+    <!-- ==========================================
+         RESULTS
+    ========================================== -->
 
     <div
       id="results"
@@ -405,13 +771,15 @@
 
     </div>
 
+
   </div>
 
 
   <script>
 
+
     // ============================================
-    // Google Sheets CSV
+    // GOOGLE SHEETS CSV
     // ============================================
 
     const CSV_URL =
@@ -423,52 +791,83 @@
     // ============================================
 
     const regionInput =
-      document.getElementById("regionInput");
+      document.getElementById(
+        "regionInput"
+      );
+
 
     const districtInput =
-      document.getElementById("districtInput");
+      document.getElementById(
+        "districtInput"
+      );
+
 
     const subdistrictInput =
-      document.getElementById("subdistrictInput");
+      document.getElementById(
+        "subdistrictInput"
+      );
 
 
     const regionSuggestions =
-      document.getElementById("regionSuggestions");
+      document.getElementById(
+        "regionSuggestions"
+      );
+
 
     const districtSuggestions =
-      document.getElementById("districtSuggestions");
+      document.getElementById(
+        "districtSuggestions"
+      );
+
 
     const subdistrictSuggestions =
-      document.getElementById("subdistrictSuggestions");
+      document.getElementById(
+        "subdistrictSuggestions"
+      );
 
 
     const searchBtn =
-      document.getElementById("searchBtn");
+      document.getElementById(
+        "searchBtn"
+      );
+
 
     const clearBtn =
-      document.getElementById("clearBtn");
+      document.getElementById(
+        "clearBtn"
+      );
 
 
     const status =
-      document.getElementById("status");
+      document.getElementById(
+        "status"
+      );
+
 
     const resultCount =
-      document.getElementById("resultCount");
+      document.getElementById(
+        "resultCount"
+      );
+
 
     const results =
-      document.getElementById("results");
+      document.getElementById(
+        "results"
+      );
 
 
     let allData = [];
 
 
     // ============================================
-    // Normalize
+    // NORMALIZE
     // ============================================
 
     function normalize(value) {
 
-      return String(value ?? "")
+      return String(
+        value ?? ""
+      )
         .trim()
         .toLowerCase();
 
@@ -476,7 +875,7 @@
 
 
     // ============================================
-    // CSV Parser
+    // CSV PARSER
     // ============================================
 
     function parseCSV(text) {
@@ -490,62 +889,97 @@
       let insideQuotes = false;
 
 
-      for (let i = 0; i < text.length; i++) {
+      for (
+        let i = 0;
+        i < text.length;
+        i++
+      ) {
 
-        const char = text[i];
+        const char =
+          text[i];
 
-        const next = text[i + 1];
+
+        const next =
+          text[i + 1];
 
 
-        if (char === '"') {
+        if (
+          char === '"'
+        ) {
 
-          if (insideQuotes && next === '"') {
+          if (
+            insideQuotes &&
+            next === '"'
+          ) {
 
             cell += '"';
 
             i++;
 
-          } else {
+          }
 
-            insideQuotes = !insideQuotes;
+          else {
+
+            insideQuotes =
+              !insideQuotes;
 
           }
 
         }
 
-        else if (char === "," && !insideQuotes) {
-
-          row.push(cell);
-
-          cell = "";
-
-        }
 
         else if (
-          (char === "\n" || char === "\r")
-          && !insideQuotes
+          char === "," &&
+          !insideQuotes
         ) {
-
-          if (char === "\r" && next === "\n") {
-            i++;
-          }
 
           row.push(cell);
 
           cell = "";
+
+        }
+
+
+        else if (
+          (
+            char === "\n" ||
+            char === "\r"
+          ) &&
+          !insideQuotes
+        ) {
+
+          if (
+            char === "\r" &&
+            next === "\n"
+          ) {
+
+            i++;
+
+          }
+
+
+          row.push(cell);
+
+          cell = "";
+
 
           if (
             row.length > 1 ||
-            row.some(value => value.trim() !== "")
+            row.some(
+              value =>
+                value.trim() !== ""
+            )
           ) {
 
             rows.push(row);
 
           }
 
+
           row = [];
 
         }
+
 
         else {
 
@@ -558,9 +992,13 @@
 
       row.push(cell);
 
+
       if (
         row.length > 1 ||
-        row.some(value => value.trim() !== "")
+        row.some(
+          value =>
+            value.trim() !== ""
+        )
       ) {
 
         rows.push(row);
@@ -568,44 +1006,63 @@
       }
 
 
-      if (!rows.length) {
+      if (
+        !rows.length
+      ) {
+
         return [];
+
       }
 
 
       const headers =
-        rows[0].map(header => header.trim());
+        rows[0].map(
+          header =>
+            header.trim()
+        );
 
 
       return rows
         .slice(1)
-        .map(row => {
+        .map(
+          row => {
 
-          const obj = {};
+            const obj = {};
 
-          headers.forEach((header, index) => {
 
-            obj[header] =
-              row[index] !== undefined
-                ? row[index].trim()
-                : "";
+            headers.forEach(
+              (
+                header,
+                index
+              ) => {
 
-          });
+                obj[header] =
+                  row[index] !== undefined
+                    ? row[index].trim()
+                    : "";
 
-          return obj;
+              }
+            );
 
-        })
-        .filter(row =>
-          Object.values(row).some(
-            value => String(value).trim() !== ""
-          )
+
+            return obj;
+
+          }
+        )
+        .filter(
+          row =>
+            Object.values(row)
+              .some(
+                value =>
+                  String(value).trim() !== ""
+              )
         );
 
     }
 
 
     // ============================================
-    // Load Data
+    // LOAD DATA
     // ============================================
 
     async function loadData() {
@@ -616,6 +1073,10 @@
           "กำลังโหลดข้อมูล...";
 
 
+        status.className =
+          "status";
+
+
         const response =
           await fetch(
             CSV_URL +
@@ -624,10 +1085,13 @@
           );
 
 
-        if (!response.ok) {
+        if (
+          !response.ok
+        ) {
 
           throw new Error(
-            "HTTP " + response.status
+            "HTTP " +
+            response.status
           );
 
         }
@@ -641,26 +1105,67 @@
           parseCSV(text);
 
 
+        if (
+          !allData.length
+        ) {
+
+          throw new Error(
+            "ไม่พบข้อมูลใน Google Sheets"
+          );
+
+        }
+
+
         status.textContent =
-          `โหลดข้อมูลแล้ว ${allData.length.toLocaleString()} รายการ`;
+          "โหลดข้อมูลแล้ว " +
+          allData.length.toLocaleString() +
+          " รายการ";
+
+
+        status.className =
+          "status success";
 
 
         setupAutocomplete();
 
+      }
 
-      } catch (error) {
 
-        console.error(error);
+      catch (error) {
+
+        console.error(
+          error
+        );
+
 
         status.textContent =
           "ไม่สามารถโหลดข้อมูลได้";
 
 
-        results.innerHTML = `
-          <div class="empty">
-            ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้
-          </div>
-        `;
+        status.className =
+          "status error";
+
+
+        results.innerHTML = "";
+
+
+        const errorBox =
+          document.createElement(
+            "div"
+          );
+
+
+        errorBox.className =
+          "empty";
+
+
+        errorBox.textContent =
+          "ไม่สามารถโหลดข้อมูลจาก Google Sheets ได้";
+
+
+        results.appendChild(
+          errorBox
+        );
 
       }
 
@@ -668,32 +1173,50 @@
 
 
     // ============================================
-    // Get Context Data
+    // GET CONTEXT DATA
     // ============================================
 
-    function getContextData(fieldName) {
+    function getContextData(
+      fieldName
+    ) {
 
-      let data = [...allData];
+      let data =
+        [...allData];
 
 
       const regionKeyword =
-        normalize(regionInput.value);
+        normalize(
+          regionInput.value
+        );
+
 
       const districtKeyword =
-        normalize(districtInput.value);
+        normalize(
+          districtInput.value
+        );
 
+
+      // --------------------------------------------
+      // DISTRICT
+      // --------------------------------------------
 
       if (
         fieldName === "district" ||
         fieldName === "subdistrict"
       ) {
 
-        if (regionKeyword) {
+        if (
+          regionKeyword
+        ) {
 
           data =
-            data.filter(row =>
-              normalize(row.region)
-                .includes(regionKeyword)
+            data.filter(
+              row =>
+                normalize(
+                  row.region
+                ).includes(
+                  regionKeyword
+                )
             );
 
         }
@@ -701,16 +1224,26 @@
       }
 
 
+      // --------------------------------------------
+      // SUBDISTRICT
+      // --------------------------------------------
+
       if (
         fieldName === "subdistrict"
       ) {
 
-        if (districtKeyword) {
+        if (
+          districtKeyword
+        ) {
 
           data =
-            data.filter(row =>
-              normalize(row.district_th)
-                .includes(districtKeyword)
+            data.filter(
+              row =>
+                normalize(
+                  row.district_th
+                ).includes(
+                  districtKeyword
+                )
             );
 
         }
@@ -724,7 +1257,7 @@
 
 
     // ============================================
-    // Show Suggestions
+    // SHOW SUGGESTIONS
     // ============================================
 
     function showSuggestions(
@@ -735,19 +1268,29 @@
     ) {
 
       const keyword =
-        normalize(input.value);
+        normalize(
+          input.value
+        );
 
 
       const contextData =
-        getContextData(fieldName);
+        getContextData(
+          fieldName
+        );
 
 
       const values = [
         ...new Set(
           contextData
-            .map(row => row[valueKey])
-            .filter(value =>
-              String(value ?? "").trim() !== ""
+            .map(
+              row =>
+                row[valueKey]
+            )
+            .filter(
+              value =>
+                String(
+                  value ?? ""
+                ).trim() !== ""
             )
         )
       ];
@@ -755,70 +1298,112 @@
 
       const filtered =
         values
-          .filter(value =>
-            normalize(value)
-              .includes(keyword)
+          .filter(
+            value =>
+              normalize(
+                value
+              ).includes(
+                keyword
+              )
           )
-          .sort((a, b) =>
-            String(a).localeCompare(
-              String(b),
-              "th"
-            )
+          .sort(
+            (
+              a,
+              b
+            ) =>
+              String(a).localeCompare(
+                String(b),
+                "th"
+              )
           )
-          .slice(0, 15);
+          .slice(
+            0,
+            15
+          );
 
 
-      suggestionBox.innerHTML = "";
+      suggestionBox.innerHTML =
+        "";
 
 
-      if (!filtered.length) {
+      if (
+        !filtered.length
+      ) {
 
-        suggestionBox.innerHTML = `
-          <div class="suggestion-empty">
-            ไม่พบข้อมูลในเงื่อนไขปัจจุบัน
-          </div>
-        `;
+        const empty =
+          document.createElement(
+            "div"
+          );
+
+
+        empty.className =
+          "suggestion-empty";
+
+
+        empty.textContent =
+          "ไม่พบข้อมูลในเงื่อนไขปัจจุบัน";
+
+
+        suggestionBox.appendChild(
+          empty
+        );
+
 
         suggestionBox.style.display =
           "block";
+
 
         return;
 
       }
 
 
-      filtered.forEach(value => {
+      filtered.forEach(
+        value => {
 
-        const item =
-          document.createElement("div");
-
-
-        item.className =
-          "suggestion-item";
-
-
-        item.textContent =
-          value;
+          const item =
+            document.createElement(
+              "div"
+            );
 
 
-        item.addEventListener(
-          "mousedown",
-          function (event) {
-
-            event.preventDefault();
-
-            input.value = value;
-
-            suggestionBox.style.display =
-              "none";
-
-          }
-        );
+          item.className =
+            "suggestion-item";
 
 
-        suggestionBox.appendChild(item);
+          item.textContent =
+            value;
 
-      });
+
+          item.addEventListener(
+            "mousedown",
+            function(event) {
+
+              event.preventDefault();
+
+
+              input.value =
+                value;
+
+
+              input.classList.add(
+                "has-value"
+              );
+
+
+              suggestionBox.style.display =
+                "none";
+
+            }
+          );
+
+
+          suggestionBox.appendChild(
+            item
+          );
+
+        }
+      );
 
 
       suggestionBox.style.display =
@@ -828,7 +1413,7 @@
 
 
     // ============================================
-    // Hide Suggestions
+    // HIDE SUGGESTIONS
     // ============================================
 
     function hideAllSuggestions() {
@@ -836,8 +1421,10 @@
       regionSuggestions.style.display =
         "none";
 
+
       districtSuggestions.style.display =
         "none";
+
 
       subdistrictSuggestions.style.display =
         "none";
@@ -846,14 +1433,22 @@
 
 
     // ============================================
-    // Autocomplete
+    // AUTOCOMPLETE
     // ============================================
 
     function setupAutocomplete() {
 
+      // REGION
+
       regionInput.addEventListener(
         "input",
-        function () {
+        function() {
+
+          regionInput.classList.toggle(
+            "has-value",
+            regionInput.value.trim() !== ""
+          );
+
 
           showSuggestions(
             regionInput,
@@ -866,9 +1461,32 @@
       );
 
 
+      regionInput.addEventListener(
+        "focus",
+        function() {
+
+          showSuggestions(
+            regionInput,
+            regionSuggestions,
+            "region",
+            "region"
+          );
+
+        }
+      );
+
+
+      // DISTRICT
+
       districtInput.addEventListener(
         "input",
-        function () {
+        function() {
+
+          districtInput.classList.toggle(
+            "has-value",
+            districtInput.value.trim() !== ""
+          );
+
 
           showSuggestions(
             districtInput,
@@ -881,9 +1499,32 @@
       );
 
 
+      districtInput.addEventListener(
+        "focus",
+        function() {
+
+          showSuggestions(
+            districtInput,
+            districtSuggestions,
+            "district",
+            "district_th"
+          );
+
+        }
+      );
+
+
+      // SUBDISTRICT
+
       subdistrictInput.addEventListener(
         "input",
-        function () {
+        function() {
+
+          subdistrictInput.classList.toggle(
+            "has-value",
+            subdistrictInput.value.trim() !== ""
+          );
+
 
           showSuggestions(
             subdistrictInput,
@@ -896,39 +1537,9 @@
       );
 
 
-      regionInput.addEventListener(
-        "focus",
-        function () {
-
-          showSuggestions(
-            regionInput,
-            regionSuggestions,
-            "region",
-            "region"
-          );
-
-        }
-      );
-
-
-      districtInput.addEventListener(
-        "focus",
-        function () {
-
-          showSuggestions(
-            districtInput,
-            districtSuggestions,
-            "district",
-            "district_th"
-          );
-
-        }
-      );
-
-
       subdistrictInput.addEventListener(
         "focus",
-        function () {
+        function() {
 
           showSuggestions(
             subdistrictInput,
@@ -944,20 +1555,35 @@
 
 
     // ============================================
-    // Search
+    // SEARCH
     // ============================================
 
     function searchData() {
 
+      hideAllSuggestions();
+
+
       const region =
-        normalize(regionInput.value);
+        normalize(
+          regionInput.value
+        );
+
 
       const district =
-        normalize(districtInput.value);
+        normalize(
+          districtInput.value
+        );
+
 
       const subdistrict =
-        normalize(subdistrictInput.value);
+        normalize(
+          subdistrictInput.value
+        );
 
+
+      // --------------------------------------------
+      // EMPTY SEARCH
+      // --------------------------------------------
 
       if (
         !region &&
@@ -965,123 +1591,215 @@
         !subdistrict
       ) {
 
-        resultCount.textContent = "-";
+        resultCount.textContent =
+          "-";
 
 
-        results.innerHTML = `
-          <div class="empty">
-            กรุณากรอกอย่างน้อย 1 ช่อง
-            แล้วกดค้นหา
-          </div>
-        `;
+        results.innerHTML =
+          "";
+
+
+        const empty =
+          document.createElement(
+            "div"
+          );
+
+
+        empty.className =
+          "empty";
+
+
+        empty.textContent =
+          "กรุณากรอกอย่างน้อย 1 ช่อง แล้วกดค้นหา";
+
+
+        results.appendChild(
+          empty
+        );
+
 
         return;
 
       }
 
 
+      // --------------------------------------------
+      // FILTER
+      // --------------------------------------------
+
       const filtered =
-        allData.filter(row => {
+        allData.filter(
+          row => {
 
-          const matchRegion =
-            !region ||
-            normalize(row.region)
-              .includes(region);
-
-
-          const matchDistrict =
-            !district ||
-            normalize(row.district_th)
-              .includes(district);
+            const matchRegion =
+              !region ||
+              normalize(
+                row.region
+              ).includes(
+                region
+              );
 
 
-          const matchSubdistrict =
-            !subdistrict ||
-            normalize(row.subdistrict_th)
-              .includes(subdistrict);
+            const matchDistrict =
+              !district ||
+              normalize(
+                row.district_th
+              ).includes(
+                district
+              );
 
 
-          return (
-            matchRegion &&
-            matchDistrict &&
-            matchSubdistrict
-          );
+            const matchSubdistrict =
+              !subdistrict ||
+              normalize(
+                row.subdistrict_th
+              ).includes(
+                subdistrict
+              );
 
-        });
+
+            return (
+              matchRegion &&
+              matchDistrict &&
+              matchSubdistrict
+            );
+
+          }
+        );
 
 
-      renderResults(filtered);
+      renderResults(
+        filtered
+      );
 
     }
 
 
     // ============================================
-    // Render Results
+    // RENDER RESULTS
     // ============================================
 
-    function renderResults(data) {
+    function renderResults(
+      data
+    ) {
 
-      resultCount.textContent =
-        `${data.length.toLocaleString()} รายการ`;
+      results.innerHTML =
+        "";
 
 
-      if (!data.length) {
+      // --------------------------------------------
+      // NO RESULT
+      // --------------------------------------------
 
-        results.innerHTML = `
-          <div class="empty">
-            ไม่พบข้อมูล
-          </div>
-        `;
+      if (
+        !data.length
+      ) {
+
+        resultCount.textContent =
+          "0 ทีม";
+
+
+        const empty =
+          document.createElement(
+            "div"
+          );
+
+
+        empty.className =
+          "empty";
+
+
+        empty.textContent =
+          "ไม่พบข้อมูล";
+
+
+        results.appendChild(
+          empty
+        );
+
 
         return;
 
       }
 
 
+      // ==========================================
+      // GROUP BY TEAM
+      // ==========================================
+
       const grouped =
         new Map();
 
 
-      data.forEach(row => {
+      data.forEach(
+        row => {
 
-        const teamName =
-          row.team_name ||
-          "ไม่ระบุทีม";
+          const teamName =
+            String(
+              row.team_name || ""
+            ).trim() ||
+            "ไม่ระบุทีม";
 
 
-        if (!grouped.has(teamName)) {
+          if (
+            !grouped.has(
+              teamName
+            )
+          ) {
 
-          grouped.set(
-            teamName,
-            []
-          );
+            grouped.set(
+              teamName,
+              []
+            );
+
+          }
+
+
+          grouped
+            .get(teamName)
+            .push(row);
 
         }
+      );
 
 
-        grouped
-          .get(teamName)
-          .push(row);
+      // ==========================================
+      // RESULT COUNT = TEAM
+      // ==========================================
 
-      });
+      resultCount.textContent =
+        grouped.size.toLocaleString() +
+        " ทีม";
 
 
-      results.innerHTML = "";
-
+      // ==========================================
+      // CREATE TEAM CARD
+      // ==========================================
 
       grouped.forEach(
-        (rows, teamName) => {
+        (
+          rows,
+          teamName
+        ) => {
 
           const card =
-            document.createElement("div");
+            document.createElement(
+              "div"
+            );
 
 
           card.className =
             "team-card";
 
 
+          // ========================================
+          // TEAM TITLE
+          // ========================================
+
           const title =
-            document.createElement("div");
+            document.createElement(
+              "div"
+            );
 
 
           title.className =
@@ -1092,94 +1810,358 @@
             teamName;
 
 
-          card.appendChild(title);
+          // ========================================
+          // UNIQUE AREA
+          // ========================================
 
+          const uniqueAreas =
+            new Map();
+
+
+          rows.forEach(
+            row => {
+
+              const region =
+                String(
+                  row.region || ""
+                ).trim();
+
+
+              const district =
+                String(
+                  row.district_th || ""
+                ).trim();
+
+
+              const subdistrict =
+                String(
+                  row.subdistrict_th || ""
+                ).trim();
+
+
+              const province =
+                String(
+                  row.province_en || ""
+                ).trim();
+
+
+              const subdistrictEn =
+                String(
+                  row.subdistrict_en || ""
+                ).trim();
+
+
+              /*
+               * ใช้ข้อมูลพื้นที่ทั้งหมด
+               * เป็น key เพื่อป้องกันรายการซ้ำ
+               */
+
+              const areaKey =
+                [
+                  normalize(region),
+                  normalize(district),
+                  normalize(subdistrict),
+                  normalize(province),
+                  normalize(subdistrictEn)
+
+                ].join("|");
+
+
+              if (
+                !uniqueAreas.has(
+                  areaKey
+                )
+              ) {
+
+                uniqueAreas.set(
+                  areaKey,
+                  {
+                    region,
+                    district,
+                    subdistrict,
+                    province,
+                    subdistrictEn
+                  }
+                );
+
+              }
+
+            }
+          );
+
+
+          // ========================================
+          // AREA COUNT
+          // ========================================
+
+          const areaCount =
+            document.createElement(
+              "span"
+            );
+
+
+          areaCount.className =
+            "team-area-count";
+
+
+          areaCount.textContent =
+            uniqueAreas.size +
+            (
+              uniqueAreas.size === 1
+                ? " พื้นที่"
+                : " พื้นที่"
+            );
+
+
+          title.appendChild(
+            areaCount
+          );
+
+
+          card.appendChild(
+            title
+          );
+
+
+          // ========================================
+          // AREA LIST
+          // ========================================
 
           const areaList =
-            document.createElement("div");
+            document.createElement(
+              "div"
+            );
 
 
           areaList.className =
             "area-list";
 
 
-          rows.forEach(row => {
+          uniqueAreas.forEach(
+            area => {
 
-            const areaItem =
-              document.createElement("div");
-
-
-            areaItem.className =
-              "area-item";
-
-
-            const district =
-              row.district_th ||
-              "-";
+              const areaItem =
+                document.createElement(
+                  "div"
+                );
 
 
-            const subdistrict =
-              row.subdistrict_th ||
-              "-";
+              areaItem.className =
+                "area-item";
 
 
-            const region =
-              row.region ||
-              "-";
+              const areaMain =
+                document.createElement(
+                  "div"
+                );
 
 
-            const province =
-              row.province_en ||
-              "-";
+              areaMain.className =
+                "area-main";
 
 
-            const subdistrictEn =
-              row.subdistrict_en ||
-              "-";
+              // 🌎 Region
+
+              const regionSpan =
+                document.createElement(
+                  "span"
+                );
 
 
-            areaItem.innerHTML = `
-
-              <div class="area-main">
-                ${district} → ${subdistrict}
-              </div>
-
-              <div class="area-sub">
-                Region: ${region}
-                | Province: ${province}
-                | ${subdistrictEn}
-              </div>
-
-            `;
+              regionSpan.className =
+                "region";
 
 
-            areaList.appendChild(
-              areaItem
-            );
-
-          });
-
-
-          card.appendChild(areaList);
+              regionSpan.textContent =
+                "🌎 " +
+                (
+                  area.region ||
+                  "-"
+                );
 
 
-          results.appendChild(card);
+              // 📍 District
+
+              const districtSpan =
+                document.createElement(
+                  "span"
+                );
+
+
+              districtSpan.className =
+                "district";
+
+
+              districtSpan.textContent =
+                " 📍 " +
+                (
+                  area.district ||
+                  "-"
+                );
+
+
+              // 📍 Subdistrict
+
+              const subdistrictSpan =
+                document.createElement(
+                  "span"
+                );
+
+
+              subdistrictSpan.className =
+                "subdistrict";
+
+
+              subdistrictSpan.textContent =
+                " 📍 " +
+                (
+                  area.subdistrict ||
+                  "-"
+                );
+
+
+              // 🇬🇧 English
+
+              const englishSpan =
+                document.createElement(
+                  "span"
+                );
+
+
+              englishSpan.className =
+                "province";
+
+
+              let englishText =
+                " 🇬🇧 ";
+
+
+              if (
+                area.province &&
+                area.subdistrictEn
+              ) {
+
+                englishText +=
+                  area.province +
+                  " " +
+                  area.subdistrictEn;
+
+              }
+
+              else if (
+                area.province
+              ) {
+
+                englishText +=
+                  area.province;
+
+              }
+
+              else if (
+                area.subdistrictEn
+              ) {
+
+                englishText +=
+                  area.subdistrictEn;
+
+              }
+
+              else {
+
+                englishText +=
+                  "-";
+
+              }
+
+
+              englishSpan.textContent =
+                englishText;
+
+
+              // ==================================
+              // APPEND
+              // ==================================
+
+              areaMain.appendChild(
+                regionSpan
+              );
+
+
+              areaMain.appendChild(
+                districtSpan
+              );
+
+
+              areaMain.appendChild(
+                subdistrictSpan
+              );
+
+
+              areaMain.appendChild(
+                englishSpan
+              );
+
+
+              areaItem.appendChild(
+                areaMain
+              );
+
+
+              areaList.appendChild(
+                areaItem
+              );
+
+            }
+          );
+
+
+          card.appendChild(
+            areaList
+          );
+
+
+          results.appendChild(
+            card
+          );
 
         }
+      );
+
+
+      // ==========================================
+      // SUMMARY
+      // ==========================================
+
+      const summary =
+        document.createElement(
+          "div"
+        );
+
+
+      summary.className =
+        "summary";
+
+
+      summary.textContent =
+        "พบ " +
+        grouped.size.toLocaleString() +
+        " ทีม";
+
+
+      results.appendChild(
+        summary
       );
 
     }
 
 
     // ============================================
-    // Search Button
+    // SEARCH BUTTON
     // ============================================
 
     searchBtn.addEventListener(
       "click",
-      function () {
-
-        hideAllSuggestions();
+      function() {
 
         searchData();
 
@@ -1188,48 +2170,71 @@
 
 
     // ============================================
-    // Enter Key
+    // ENTER KEY
     // ============================================
 
     [
       regionInput,
       districtInput,
       subdistrictInput
-    ].forEach(input => {
 
-      input.addEventListener(
-        "keydown",
-        function (event) {
+    ].forEach(
+      input => {
 
-          if (event.key === "Enter") {
+        input.addEventListener(
+          "keydown",
+          function(event) {
 
-            event.preventDefault();
+            if (
+              event.key === "Enter"
+            ) {
 
-            hideAllSuggestions();
+              event.preventDefault();
 
-            searchData();
+              searchData();
+
+            }
 
           }
+        );
 
-        }
-      );
-
-    });
+      }
+    );
 
 
     // ============================================
-    // Clear Button
+    // CLEAR
     // ============================================
 
     clearBtn.addEventListener(
       "click",
-      function () {
+      function() {
 
-        regionInput.value = "";
+        regionInput.value =
+          "";
 
-        districtInput.value = "";
 
-        subdistrictInput.value = "";
+        districtInput.value =
+          "";
+
+
+        subdistrictInput.value =
+          "";
+
+
+        regionInput.classList.remove(
+          "has-value"
+        );
+
+
+        districtInput.classList.remove(
+          "has-value"
+        );
+
+
+        subdistrictInput.classList.remove(
+          "has-value"
+        );
 
 
         hideAllSuggestions();
@@ -1239,26 +2244,44 @@
           "-";
 
 
-        results.innerHTML = `
-          <div class="empty">
-            กรุณากรอกข้อมูลแล้วกดค้นหา
-          </div>
-        `;
+        results.innerHTML =
+          "";
+
+
+        const empty =
+          document.createElement(
+            "div"
+          );
+
+
+        empty.className =
+          "empty";
+
+
+        empty.textContent =
+          "กรุณากรอกข้อมูลแล้วกดค้นหา";
+
+
+        results.appendChild(
+          empty
+        );
 
       }
     );
 
 
     // ============================================
-    // Click Outside
+    // CLICK OUTSIDE
     // ============================================
 
     document.addEventListener(
       "click",
-      function (event) {
+      function(event) {
 
         if (
-          !event.target.closest(".field")
+          !event.target.closest(
+            ".field"
+          )
         ) {
 
           hideAllSuggestions();
@@ -1270,14 +2293,16 @@
 
 
     // ============================================
-    // Escape Key
+    // ESCAPE
     // ============================================
 
     document.addEventListener(
       "keydown",
-      function (event) {
+      function(event) {
 
-        if (event.key === "Escape") {
+        if (
+          event.key === "Escape"
+        ) {
 
           hideAllSuggestions();
 
@@ -1288,7 +2313,7 @@
 
 
     // ============================================
-    // Start
+    // START
     // ============================================
 
     loadData();
